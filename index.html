@@ -1,0 +1,505 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Nursery Supply Management Platform — B2B Supply Chain Prototype</title>
+  <!-- Google Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <!-- Main Stylesheet -->
+  <link rel="stylesheet" href="app/static/css/styles.css">
+</head>
+<body>
+
+  <!-- Top App Navigation & Role Switcher -->
+  <header class="app-header">
+    <div class="header-container">
+      <div class="brand-wrapper">
+        <div class="brand-logo-icon">🌿</div>
+        <div>
+          <h1 class="brand-title">Nursery Supply Management Platform</h1>
+          <div class="brand-subtitle">B2B Commercial Plant Trade & Logistics</div>
+        </div>
+      </div>
+
+      <!-- Interactive Role Toggle Switcher -->
+      <div class="role-switcher-container">
+        <span class="role-switcher-label">View Portal:</span>
+        <button id="role-btn-supplier" class="role-btn supplier active" onclick="switchRole('supplier')">
+          <span>🏢</span> Supplier Portal
+        </button>
+        <button id="role-btn-nursery" class="role-btn nursery" onclick="switchRole('nursery')">
+          <span>🌱</span> Nursery Portal
+        </button>
+      </div>
+
+      <div>
+        <button class="btn btn-secondary btn-sm" onclick="resetDemoData()" title="Reset data to initial state">
+          ↺ Reset Demo
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <!-- Main Content Container -->
+  <main class="main-wrapper">
+
+    <!-- B2B Supply Chain Workflow Stepper -->
+    <section class="workflow-banner">
+      <div class="workflow-header">
+        <div class="workflow-title">
+          <span>🔄</span> End-to-End Nursery B2B Supply Chain Workflow
+        </div>
+        <span class="workflow-badge">Interactive Simulation</span>
+      </div>
+
+      <div class="stepper">
+        <div class="step-item completed">
+          <div class="step-num">1</div>
+          <div class="step-name">Order Placed</div>
+          <div class="step-desc">Nursery requests batch</div>
+        </div>
+        <div class="step-item completed">
+          <div class="step-num">2</div>
+          <div class="step-name">Staged & Tagged</div>
+          <div class="step-desc">Supplier prepares stock</div>
+        </div>
+        <div class="step-item active">
+          <div class="step-num">3</div>
+          <div class="step-name">Truck Dispatched</div>
+          <div class="step-desc">Loaded & in-transit</div>
+        </div>
+        <div class="step-item">
+          <div class="step-num">4</div>
+          <div class="step-name">Physical Inspection</div>
+          <div class="step-desc">Nursery counts sound vs damaged</div>
+        </div>
+        <div class="step-item">
+          <div class="step-num">5</div>
+          <div class="step-name">Invoice on Verified</div>
+          <div class="step-desc">Billed only on sound plants</div>
+        </div>
+        <div class="step-item">
+          <div class="step-num">6</div>
+          <div class="step-name">Payments & Ledger</div>
+          <div class="step-desc">Balance & late interest</div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Top Summary Metrics Grid -->
+    <section class="stats-grid">
+      <div class="stat-card">
+        <div class="stat-info">
+          <div class="stat-label">Total Commercial Orders</div>
+          <div class="stat-value" id="stat-total-orders">2</div>
+          <div class="stat-sub">Across active contracts</div>
+        </div>
+        <div class="stat-icon blue">📦</div>
+      </div>
+
+      <div class="stat-card">
+        <div class="stat-info">
+          <div class="stat-label">Trucks In-Transit</div>
+          <div class="stat-value" id="stat-in-transit">1</div>
+          <div class="stat-sub">Dispatched on road</div>
+        </div>
+        <div class="stat-icon amber">🚚</div>
+      </div>
+
+      <div class="stat-card">
+        <div class="stat-info">
+          <div class="stat-label">Verified Deliveries</div>
+          <div class="stat-value" id="stat-verified">1</div>
+          <div class="stat-sub">Count confirmed by nursery</div>
+        </div>
+        <div class="stat-icon green">✅</div>
+      </div>
+
+      <div class="stat-card">
+        <div class="stat-info">
+          <div class="stat-label">Receivables Outstanding</div>
+          <div class="stat-value" id="stat-receivables">₹19,912</div>
+          <div class="stat-sub">Tracked with due dates</div>
+        </div>
+        <div class="stat-icon rose">💰</div>
+      </div>
+    </section>
+
+    <!-- ======================================================================
+         PORTAL 1: SUPPLIER WORKSPACE
+         ====================================================================== -->
+    <div id="section-supplier" class="portal-section active">
+      
+      <!-- Supplier Order Staging & Dispatch Queue -->
+      <section class="dashboard-card">
+        <div class="card-header">
+          <div>
+            <h2 class="card-title">📦 Order Fulfillment & Dispatch Board</h2>
+            <p class="card-subtitle">Manage incoming nursery orders, prepare plant batches, and log transport trucks.</p>
+          </div>
+        </div>
+        <div class="card-body">
+          <div class="table-responsive">
+            <table class="data-table">
+              <thead>
+                <tr>
+                  <th>Order #</th>
+                  <th>Nursery Client</th>
+                  <th>Plant Variety</th>
+                  <th>Ordered Qty</th>
+                  <th>Verified Delivery Count</th>
+                  <th>Status</th>
+                  <th>Actions</th>
+                </tr>
+              </thead>
+              <tbody id="supplier-orders-tbody">
+                <!-- Injected via JavaScript -->
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </section>
+
+      <!-- Invoices & Billing Table -->
+      <section class="dashboard-card">
+        <div class="card-header">
+          <div>
+            <h2 class="card-title">🧾 Invoicing & Payment Tracking</h2>
+            <p class="card-subtitle">Invoices strictly generated on verified received counts with balance tracking.</p>
+          </div>
+        </div>
+        <div class="card-body">
+          <div class="table-responsive">
+            <table class="data-table">
+              <thead>
+                <tr>
+                  <th>Invoice #</th>
+                  <th>Nursery</th>
+                  <th>Verified Units</th>
+                  <th>Total Amount</th>
+                  <th>Balance Due</th>
+                  <th>Due Date</th>
+                  <th>Status</th>
+                  <th>Actions</th>
+                </tr>
+              </thead>
+              <tbody id="invoices-tbody">
+                <!-- Injected via JavaScript -->
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </section>
+
+      <!-- Late Payment Interest Calculator & Simulator -->
+      <section class="dashboard-card">
+        <div class="card-header">
+          <div>
+            <h2 class="card-title">⏳ Agreed Late-Payment Interest Calculator</h2>
+            <p class="card-subtitle">Calculates overdue interest according to agreed commercial contract terms after due date.</p>
+          </div>
+        </div>
+        <div class="card-body">
+          <div class="form-row" style="align-items: center;">
+            <div>
+              <div class="form-group">
+                <label class="form-label" for="calc-days-overdue">Simulate Overdue Days:</label>
+                <input type="range" id="calc-days-overdue" min="0" max="90" value="20" style="width: 100%;">
+                <div style="display: flex; justify-content: space-between; font-size: 0.75rem; color: var(--slate-500); margin-top: 0.25rem;">
+                  <span>0 Days (On Time)</span>
+                  <span id="calc-days-display" style="font-weight: 700; color: var(--rose-600)">20 Days Overdue</span>
+                  <span>90 Days</span>
+                </div>
+              </div>
+
+              <div class="form-group">
+                <label class="form-label" for="calc-interest-rate">Agreed Annual Late Interest Rate (% p.a.):</label>
+                <input type="number" id="calc-interest-rate" class="form-input" value="18.0" step="0.5" min="0" max="36">
+                <small style="color: var(--slate-500); font-size: 0.75rem;">Formula: Balance × (Annual Rate / 365) × Days Overdue</small>
+              </div>
+            </div>
+
+            <!-- Calculation Output Card -->
+            <div style="background: var(--slate-50); border: 1px solid var(--slate-200); border-radius: var(--radius-md); padding: 1.25rem;">
+              <div style="font-size: 0.8rem; font-weight: 600; color: var(--slate-600); margin-bottom: 0.5rem;">Sample Invoice Calculation (INV-401):</div>
+              <div style="display: flex; justify-content: space-between; margin-bottom: 0.5rem; font-size: 0.85rem;">
+                <span>Principal Balance Due:</span>
+                <span id="calc-principal" style="font-weight: 600;">₹19,912.50</span>
+              </div>
+              <div style="display: flex; justify-content: space-between; margin-bottom: 0.5rem; font-size: 0.85rem; color: var(--rose-600);">
+                <span>Accrued Late Fee Interest:</span>
+                <span id="calc-interest-amt" style="font-weight: 700;">+ ₹196.40</span>
+              </div>
+              <div style="border-top: 1px dashed var(--slate-300); padding-top: 0.5rem; display: flex; justify-content: space-between; font-size: 1rem; font-weight: 800; color: var(--slate-900);">
+                <span>Total Outstanding Payable:</span>
+                <span id="calc-total-due" style="color: var(--rose-600);">₹20,108.90</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- Complete B2B Transaction Ledger -->
+      <section class="dashboard-card">
+        <div class="card-header">
+          <div>
+            <h2 class="card-title">📖 Complete B2B Account Statement & Ledger</h2>
+            <p class="card-subtitle">Transparent double-entry transaction history of all debits (invoices) and credits (payments).</p>
+          </div>
+        </div>
+        <div class="card-body">
+          <div class="table-responsive">
+            <table class="data-table">
+              <thead>
+                <tr>
+                  <th>Date</th>
+                  <th>Entry Type</th>
+                  <th>Reference</th>
+                  <th>Description</th>
+                  <th>Debit (Billed)</th>
+                  <th>Credit (Paid)</th>
+                  <th>Running Balance</th>
+                </tr>
+              </thead>
+              <tbody id="ledger-tbody">
+                <!-- Injected via JavaScript -->
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </section>
+
+    </div>
+
+    <!-- ======================================================================
+         PORTAL 2: NURSERY WORKSPACE
+         ====================================================================== -->
+    <div id="section-nursery" class="portal-section">
+
+      <!-- Order Placement Form & Catalog -->
+      <section class="dashboard-card">
+        <div class="card-header">
+          <div>
+            <h2 class="card-title">🌱 Place New Commercial Plant Order</h2>
+            <p class="card-subtitle">Select varieties from the grower's live catalog and submit your batch request.</p>
+          </div>
+        </div>
+        <div class="card-body">
+          <form id="new-order-form">
+            <div class="form-row">
+              <div class="form-group">
+                <label class="form-label" for="new-order-plant">Select Plant Variety & Spec:</label>
+                <select id="new-order-plant" class="form-select" required>
+                  <!-- Injected via JavaScript -->
+                </select>
+              </div>
+
+              <div class="form-group">
+                <label class="form-label" for="new-order-qty">Required Batch Quantity:</label>
+                <input type="number" id="new-order-qty" class="form-input" min="10" step="5" value="50" required placeholder="e.g. 100">
+              </div>
+            </div>
+
+            <div style="display: flex; justify-content: flex-end;">
+              <button type="submit" class="btn btn-primary">
+                <span>➕</span> Submit Order to Supplier
+              </button>
+            </div>
+          </form>
+        </div>
+      </section>
+
+      <!-- Active Shipments & Inspection Queue -->
+      <section class="dashboard-card">
+        <div class="card-header">
+          <div>
+            <h2 class="card-title">🚚 Active Shipments & Dock Inspection</h2>
+            <p class="card-subtitle">Track incoming trucks and inspect/verify physical plant counts before accepting invoice.</p>
+          </div>
+        </div>
+        <div class="card-body">
+          <div class="table-responsive">
+            <table class="data-table">
+              <thead>
+                <tr>
+                  <th>Order #</th>
+                  <th>Plant Variety</th>
+                  <th>Batch Qty</th>
+                  <th>Truck & Driver Logistics</th>
+                  <th>Current State</th>
+                  <th>Inspection Actions</th>
+                </tr>
+              </thead>
+              <tbody id="nursery-orders-tbody">
+                <!-- Injected via JavaScript -->
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </section>
+
+      <!-- Wholesale Plant Catalog Grid -->
+      <section class="dashboard-card">
+        <div class="card-header">
+          <div>
+            <h2 class="card-title">🌿 Wholesale Plant Catalog</h2>
+            <p class="card-subtitle">Current stock available directly from the supplier's farm.</p>
+          </div>
+        </div>
+        <div class="card-body">
+          <div class="plant-grid" id="plant-catalog-grid">
+            <!-- Injected via JavaScript -->
+          </div>
+        </div>
+      </section>
+
+    </div>
+
+  </main>
+
+  <!-- ======================================================================
+       MODAL 1: TRUCK DISPATCH (SUPPLIER)
+       ====================================================================== -->
+  <dialog id="dispatch-modal">
+    <div class="modal-header">
+      <h3 class="modal-title">🚚 Dispatch Transport Truck</h3>
+      <button class="modal-close" onclick="document.getElementById('dispatch-modal').close()">✕</button>
+    </div>
+    <form id="dispatch-form">
+      <div class="modal-body">
+        <p style="font-size: 0.85rem; color: var(--slate-600); margin-bottom: 1rem;">
+          Assign transport vehicle and driver details for Order <strong id="modal-dispatch-order-id"></strong> (<span id="modal-dispatch-plant"></span>).
+        </p>
+
+        <div class="form-group">
+          <label class="form-label" for="input-truck-no">Truck / Vehicle Plate Number:</label>
+          <input type="text" id="input-truck-no" class="form-input" required placeholder="e.g. KA-04-E-9021" value="KA-04-E-9021">
+        </div>
+
+        <div class="form-row">
+          <div class="form-group">
+            <label class="form-label" for="input-driver-name">Driver Full Name:</label>
+            <input type="text" id="input-driver-name" class="form-input" required placeholder="e.g. Ramesh Kumar" value="Ramesh Kumar">
+          </div>
+          <div class="form-group">
+            <label class="form-label" for="input-driver-phone">Driver Phone Number:</label>
+            <input type="tel" id="input-driver-phone" class="form-input" required placeholder="e.g. +91 98450 12345" value="+91 98450 12345">
+          </div>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" onclick="document.getElementById('dispatch-modal').close()">Cancel</button>
+        <button type="submit" class="btn btn-primary">Confirm Dispatch & Notify Nursery</button>
+      </div>
+    </form>
+  </dialog>
+
+  <!-- ======================================================================
+       MODAL 2: DELIVERY VERIFICATION / INSPECTION (NURSERY)
+       ====================================================================== -->
+  <dialog id="verify-modal">
+    <div class="modal-header">
+      <h3 class="modal-title">🔍 Physical Inspection & Delivery Verification</h3>
+      <button class="modal-close" onclick="document.getElementById('verify-modal').close()">✕</button>
+    </div>
+    <form id="verify-form">
+      <div class="modal-body">
+        <p style="font-size: 0.85rem; color: var(--slate-600); margin-bottom: 1rem;">
+          Verify physical plant counts for Order <strong id="modal-verify-order-id"></strong> (<span id="modal-verify-plant-name"></span>). 
+          Truck manifest stated <strong><span id="modal-verify-loaded-qty">100</span> units loaded</strong>.
+        </p>
+
+        <div class="inspection-box">
+          <div class="counter-grid">
+            <div class="counter-item sound">
+              <div class="counter-num green" id="summary-sound">95</div>
+              <div class="counter-title">Sound / Accepted</div>
+            </div>
+            <div class="counter-item damaged">
+              <div class="counter-num red" id="summary-damaged">5</div>
+              <div class="counter-title">Damaged / Rejected</div>
+            </div>
+            <div class="counter-item">
+              <div class="counter-num" id="summary-total-counted">100</div>
+              <div class="counter-title">Total Counted</div>
+            </div>
+          </div>
+        </div>
+
+        <div class="form-row">
+          <div class="form-group">
+            <label class="form-label" for="input-sound-qty">Sound Plants (Accepted):</label>
+            <input type="number" id="input-sound-qty" class="form-input" min="0" required oninput="onVerificationInputsChange()">
+          </div>
+          <div class="form-group">
+            <label class="form-label" for="input-damaged-qty">Damaged / Dead (Rejected):</label>
+            <input type="number" id="input-damaged-qty" class="form-input" min="0" required oninput="onVerificationInputsChange()">
+          </div>
+        </div>
+
+        <div id="verify-count-warning" style="display:none; font-size:0.75rem; color:var(--amber-600); margin-bottom:0.75rem;"></div>
+
+        <div class="form-group">
+          <label class="form-label" for="input-damage-notes">Damage Inspection Notes / Rejection Reason:</label>
+          <textarea id="input-damage-notes" class="form-input" rows="2" placeholder="e.g., Pots cracked during transport; foliage wilted or broken stems."></textarea>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" onclick="document.getElementById('verify-modal').close()">Cancel</button>
+        <button type="submit" class="btn btn-success">Submit Verification & Lock Count</button>
+      </div>
+    </form>
+  </dialog>
+
+  <!-- ======================================================================
+       MODAL 3: RECORD PAYMENT (SUPPLIER)
+       ====================================================================== -->
+  <dialog id="payment-modal">
+    <div class="modal-header">
+      <h3 class="modal-title">💰 Record Customer Payment</h3>
+      <button class="modal-close" onclick="document.getElementById('payment-modal').close()">✕</button>
+    </div>
+    <form id="payment-form">
+      <div class="modal-body">
+        <p style="font-size: 0.85rem; color: var(--slate-600); margin-bottom: 1rem;">
+          Recording payment against Invoice <strong id="modal-payment-inv-id"></strong>. Total Invoiced: <strong id="modal-payment-total"></strong>. Current Balance Due: <strong id="modal-payment-balance" style="color:var(--rose-600)"></strong>.
+        </p>
+
+        <div class="form-group">
+          <label class="form-label" for="input-payment-amount">Payment Amount (₹):</label>
+          <input type="number" id="input-payment-amount" class="form-input" step="0.5" min="1" required>
+        </div>
+
+        <div class="form-row">
+          <div class="form-group">
+            <label class="form-label" for="input-payment-method">Payment Method:</label>
+            <select id="input-payment-method" class="form-select">
+              <option value="Bank Transfer (NEFT/IMPS)">Bank Transfer (NEFT/IMPS)</option>
+              <option value="UPI / QR">UPI / Instant Pay</option>
+              <option value="Cheque">Commercial Cheque</option>
+              <option value="Cash">Cash at Nursery</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label class="form-label" for="input-payment-ref">Transaction Reference / Cheque #:</label>
+            <input type="text" id="input-payment-ref" class="form-input" placeholder="e.g. IMPS-994102">
+          </div>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" onclick="document.getElementById('payment-modal').close()">Cancel</button>
+        <button type="submit" class="btn btn-success">Confirm Payment & Post to Ledger</button>
+      </div>
+    </form>
+  </dialog>
+
+  <!-- Toast Container -->
+  <div id="toast-container" class="toast-container"></div>
+
+  <!-- JavaScript Engine -->
+  <script src="app/static/js/app.js"></script>
+</body>
+</html>
