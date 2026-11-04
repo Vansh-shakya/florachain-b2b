@@ -10,7 +10,7 @@ import hmac
 from flask import Flask, request, jsonify, session
 from werkzeug.exceptions import HTTPException
 
-from app.config import get_config, Config
+from app.config import get_config, Config, ProductionConfig
 from app.models.database import init_database, close_db, DEFAULT_DB_PATH
 
 
@@ -182,8 +182,75 @@ def create_app(test_config=None):
         return response
 
     # 7. Initialize Database with schema & seeds
-    db_target = app.config.get('DATABASE_URL') or app.config.get('DB_PATH', DEFAULT_DB_PATH)
-    init_database(db_target)
+    is_vercel = os.environ.get('VERCEL') == '1' or bool(os.environ.get('VERCEL_ENV'))
+    is_production = (
+        (isinstance(config_cls, type) and issubclass(config_cls, ProductionConfig))
+        or config_cls == ProductionConfig
+        or is_vercel
+    )
+
+    db_target = app.config.get('DATABASE_URL')
+
+    if (is_production or is_vercel) and not db_target:
+        app.config['DATABASE_MISCONFIGURED'] = True
+        app.logger.critical(
+            "FloraChain B2B: DATABASE_URL is not configured in production / Vercel. "
+            "SQLite is disabled on Vercel's read-only serverless filesystem. "
+            "Please configure DATABASE_URL in Vercel Project Settings."
+        )
+
+        @app.before_request
+        def handle_missing_production_database():
+            if request.path == '/api/health':
+                return jsonify({
+                    "status": "misconfigured",
+                    "service": "FloraChain B2B Backend Engine",
+                    "error": "DATABASE_URL is not configured in production. A hosted PostgreSQL database is required for Vercel deployment.",
+                    "action_required": "Set DATABASE_URL in Vercel Project Settings > Environment Variables."
+                }), 503
+
+            if request.path.startswith('/api/'):
+                return jsonify({
+                    "success": False,
+                    "error": "Production Database Not Configured: DATABASE_URL environment variable is missing. Please configure your PostgreSQL connection in Vercel."
+                }), 503
+
+            return """<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>FloraChain B2B — Database Configuration Required</title>
+  <style>
+    body { font-family: system-ui, -apple-system, sans-serif; background: #f4f6f3; color: #1c2e1b; margin: 0; padding: 2rem; display: flex; align-items: center; justify-content: center; min-height: 90vh; }
+    .card { background: white; border: 1px solid #d4dfd2; border-top: 6px solid #063B00; border-radius: 8px; max-width: 620px; padding: 2.5rem; box-shadow: 0 4px 20px rgba(0,0,0,0.06); }
+    h1 { color: #063B00; margin-top: 0; font-size: 1.5rem; display: flex; align-items: center; gap: 0.5rem; }
+    p { line-height: 1.6; color: #374151; }
+    ol { padding-left: 1.25rem; line-height: 1.8; color: #374151; }
+    code { background: #f3f4f6; padding: 0.2rem 0.4rem; border-radius: 4px; font-size: 0.9em; color: #063B00; font-weight: 600; }
+    .badge { display: inline-block; background: #fef3c7; color: #92400e; padding: 0.25rem 0.75rem; border-radius: 9999px; font-size: 0.8rem; font-weight: 600; margin-bottom: 1rem; }
+  </style>
+</head>
+<body>
+  <div class="card">
+    <div class="badge">⚙️ Production Setup Required</div>
+    <h1>🌿 FloraChain B2B — Database Setup Needed</h1>
+    <p>Your application is successfully running on Vercel, but the <strong>hosted PostgreSQL database</strong> has not been connected yet.</p>
+    <p>Because Vercel serverless functions run on a secure, read-only filesystem, SQLite is disabled in production to protect against data loss.</p>
+    <h3>To activate the platform:</h3>
+    <ol>
+      <li>Create a free PostgreSQL database at <strong>Neon.tech</strong> or <strong>Supabase</strong>.</li>
+      <li>Copy your connection string (e.g. <code>postgresql://user:pass@ep-xyz.neon.tech/neondb?sslmode=require</code>).</li>
+      <li>Open your <strong>Vercel Dashboard</strong> &rarr; <strong>Settings</strong> &rarr; <strong>Environment Variables</strong>.</li>
+      <li>Add <code>DATABASE_URL</code> and paste your connection string.</li>
+      <li>Redeploy the project in Vercel.</li>
+    </ol>
+  </div>
+</body>
+</html>""", 503
+    else:
+        if not db_target:
+            db_target = app.config.get('DB_PATH', DEFAULT_DB_PATH)
+        init_database(db_target)
 
     # 8. Register Global Error Handlers
     register_error_handlers(app)

@@ -284,8 +284,8 @@ class PostgresConnectionAdapter:
 
 def parse_pg_url(url):
     """
-    Parses a postgresql:// URL into connection parameters, correctly handling
-    unencoded special characters (such as '@') in the password component.
+    Parses a postgresql:// or postgres:// URL into connection parameters, correctly handling
+    unencoded special characters in password and query parameters like ?sslmode=require.
     """
     import urllib.parse
     if not url or not isinstance(url, str):
@@ -296,18 +296,28 @@ def parse_pg_url(url):
     scheme, userinfo, hostport, dbname = m.groups()
     user, _, password = userinfo.partition(':')
     host, _, port = hostport.partition(':')
-    return {
+    params = {
         'host': host,
         'port': int(port) if port else 5432,
         'dbname': dbname,
         'user': user,
         'password': urllib.parse.unquote(password)
     }
+    # Parse query parameters (e.g. sslmode=require, channel_binding, etc.)
+    if '?' in url:
+        query_string = url.partition('?')[2]
+        query_params = urllib.parse.parse_qs(query_string)
+        for k, v in query_params.items():
+            if k not in params and v:
+                params[k] = v[0]
+    return params
 
 
 def get_postgres_connection(db_url):
     """
     Connects to PostgreSQL using psycopg2 and returns an adapted connection.
+    Uses parse_pg_url to handle unencoded special characters (e.g. '@' in passwords)
+    and preserve query parameters like sslmode=require.
     """
     try:
         import psycopg2
@@ -397,10 +407,29 @@ def close_db(e=None):
     except (ImportError, RuntimeError):
         pass
 
+def sync_postgres_sequences(conn):
+    """
+    Advances PostgreSQL identity sequences to MAX(id) for each table with an autoincrement ID.
+    Prevents future INSERT statements from triggering duplicate key violations.
+    """
+    for table in TABLES_WITH_AUTO_ID:
+        try:
+            cur = conn.execute(f"SELECT COALESCE(MAX(id), 0) FROM {table}")
+            row = cur.fetchone()
+            max_id = row[0] if row else 0
+            if max_id > 0:
+                conn.execute(
+                    f"SELECT setval(pg_get_serial_sequence('{table}', 'id'), %s, true)",
+                    (max_id,)
+                )
+        except Exception:
+            pass
+
+
 def init_database(db_path=None):
     """
     Applies the appropriate relational schema and populates initial B2B seed data if not present.
-    - If PostgreSQL: applies schema_postgres.sql.
+    - If PostgreSQL: applies schema_postgres.sql and seeds initial demo data if empty.
     - If SQLite: applies schema.sql and runs incremental migration routines if needed.
     """
     dialect = get_active_dialect(db_path)
@@ -411,6 +440,13 @@ def init_database(db_path=None):
                 schema_sql = f.read()
             with conn:
                 conn.execute(schema_sql)
+
+            # Check if users already seeded on fresh empty PostgreSQL instance
+            cur = conn.execute("SELECT COUNT(*) FROM users;")
+            user_count = cur.fetchone()[0]
+            if user_count == 0:
+                seed_initial_data(conn)
+                sync_postgres_sequences(conn)
         finally:
             conn.close()
         return

@@ -30,8 +30,9 @@ BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 def find_available_port(start_port=8000, max_attempts=10):
     for port in range(start_port, start_port + max_attempts):
         with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
+            s.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
             try:
-                s.bind(("127.0.0.1", port))
+                s.bind(("0.0.0.0", port))
                 return port
             except OSError:
                 continue
@@ -44,7 +45,6 @@ def start_server():
 
     print("=" * 68)
     print("🌿 FloraChain B2B — Nursery Supply Platform")
-    print("   Stage 2: Authentication, Session RBAC & Security Guardrails")
     print("=" * 68)
     print(f"🚀 Server running at:       {url}")
     print(f"📁 Serving frontend from:   {BASE_DIR}")
@@ -52,20 +52,24 @@ def start_server():
     print(f"🌐 Health endpoint:         http://127.0.0.1:{port}/api/health")
     print(f"🔑 Auth endpoint:           http://127.0.0.1:{port}/api/auth/login")
     print(f"🎛️ Demo Role Switcher:      Enabled (local development runner)")
-    print(f"🔒 Production Default:      Disabled (strict credentials required)")
-    print(f"↩️ Rollback command:        python run_legacy.py")
     print("⏹️  To stop the server, press Ctrl + C in this terminal window.")
     print("=" * 68 + "\n")
 
     app = create_app()
 
-    try:
-        webbrowser.open(url)
-    except Exception:
-        pass
+    import threading
+    def _open_browser_when_ready():
+        import time
+        time.sleep(1.0)
+        try:
+            webbrowser.open(url)
+        except Exception:
+            pass
+
+    threading.Thread(target=_open_browser_when_ready, daemon=True).start()
 
     try:
-        app.run(host="127.0.0.1", port=port, debug=False)
+        app.run(host="0.0.0.0", port=port, debug=False)
     except KeyboardInterrupt:
         print("\n🛑 FloraChain B2B Server stopped successfully.")
 

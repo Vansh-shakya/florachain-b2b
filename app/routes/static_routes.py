@@ -13,12 +13,15 @@ STATIC_DIR = os.path.join(BASE_DIR, 'app', 'static')
 
 @static_bp.route('/api/health', methods=['GET'])
 def health():
+    from app.models.database import get_active_dialect
+    dialect = get_active_dialect()
+    db_label = "PostgreSQL" if dialect == 'postgresql' else "SQLite (WAL mode)"
     return jsonify({
         "status": "ok",
         "service": "FloraChain B2B Backend Engine",
         "stage": "Stage 1 — SQLite Schema & Flask Foundation",
         "version": "1.0.0",
-        "database": "SQLite (WAL mode)",
+        "database": db_label,
         "dual_confirmation": True
     })
 

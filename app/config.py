@@ -67,6 +67,8 @@ class ProductionConfig(Config):
     SESSION_COOKIE_SECURE = True
     CSRF_ENABLED = True
     LOG_LEVEL = os.environ.get('LOG_LEVEL', 'INFO')
+    # In production/Vercel serverless environments, local SQLite file writes are strictly disabled
+    DB_PATH = None
 
 
 config_by_name = {
@@ -79,9 +81,11 @@ config_by_name = {
 
 def get_config(config_name=None):
     """
-    Resolves the configuration class based on config_name or FLASK_ENV environment variable.
+    Resolves the configuration class based on config_name, VERCEL environment, or FLASK_ENV.
     """
     if not config_name:
-        config_name = os.environ.get('FLASK_ENV', os.environ.get('FLASK_CONFIG', 'default')).lower()
+        is_vercel = os.environ.get('VERCEL') == '1' or bool(os.environ.get('VERCEL_ENV'))
+        default_env = 'production' if is_vercel else 'default'
+        config_name = os.environ.get('FLASK_ENV', os.environ.get('FLASK_CONFIG', default_env)).lower()
     return config_by_name.get(config_name, DevelopmentConfig)
 
