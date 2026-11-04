@@ -5,7 +5,7 @@ Flask==3.0.3
 gunicorn==22.0.0
 
 # Database Adapter
-psycopg2-binary==2.9.9
+psycopg2-binary==2.9.13
 
 # Environment Configuration
 python-dotenv==1.0.1
