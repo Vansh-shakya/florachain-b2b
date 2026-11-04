@@ -1,8 +1,10 @@
 # Core Web Framework
 Flask==3.0.3
 
-# Database & ORM
-Flask-SQLAlchemy==3.1.1
+# Production WSGI Server (Render, Linux PaaS)
+gunicorn==22.0.0
+
+# Database Adapter
 psycopg2-binary==2.9.9
 
 # Environment Configuration
